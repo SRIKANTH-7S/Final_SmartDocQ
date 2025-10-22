@@ -11,5 +11,3 @@ PyMuPDF
 python-docx
 numpy
 email-validator
-sentence-transformers
-faiss-cpu

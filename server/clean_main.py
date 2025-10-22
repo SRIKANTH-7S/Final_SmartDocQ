@@ -6,7 +6,7 @@ import uuid
 import tempfile
 from datetime import datetime
 from typing import List, Optional, Dict, Any
-from final_smartmodel import DocumentQA, InterviewCopilot
+from working_smartmodel import DocumentQA, InterviewCopilot
 
 app = FastAPI(title="SmartDocQ API", version="1.0")
 
