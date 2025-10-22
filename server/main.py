@@ -390,8 +390,8 @@ import jwt
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-# Import real AI classes
-from final_smartmodel import DocumentQA, InterviewCopilot
+# Import simple AI classes
+from simple_ai import DocumentQA, InterviewCopilot
 
 # ------------------------
 # App Setup
