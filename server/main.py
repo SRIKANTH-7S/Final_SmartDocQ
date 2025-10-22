@@ -369,6 +369,7 @@
 import os
 import uuid
 import json
+import tempfile
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 
@@ -389,30 +390,8 @@ import jwt
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-# Import your existing DocumentQA (unchanged) and InterviewCopilot (from smartinterview.py)
-# from smartmodel import DocumentQA  # existing model import (unchanged)
-# from smartinterview import InterviewCopilot  # assumes smartinterview.py is next to this file
-
-# Mock classes for now to avoid import errors
-class DocumentQA:
-    def __init__(self):
-        pass
-    def load_document(self, file_path):
-        return {"status": "Document loaded successfully"}
-    def ask_question(self, question):
-        return f"Mock answer for: {question}"
-    def clear_cache(self):
-        return "Cache cleared"
-
-class InterviewCopilot:
-    def __init__(self):
-        pass
-    def load_document(self, file_path):
-        return {"status": "Document loaded successfully"}
-    def generate_questions(self, num_questions=5, level="medium", qtype=None):
-        return [f"Mock question {i+1}" for i in range(num_questions)]
-    def evaluate_answers(self, answers):
-        return 85.0, [{"question": f"Q{i+1}", "score": 8.5, "feedback": "Good answer"} for i in range(len(answers))]
+# Import real AI classes
+from working_smartmodel import DocumentQA, InterviewCopilot
 
 # ------------------------
 # App Setup
