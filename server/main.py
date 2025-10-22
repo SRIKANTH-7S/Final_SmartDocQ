@@ -391,7 +391,7 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 
 # Import real AI classes
-from working_smartmodel import DocumentQA, InterviewCopilot
+from final_smartmodel import DocumentQA, InterviewCopilot
 
 # ------------------------
 # App Setup
