@@ -370,7 +370,7 @@ Answer:
     backoff = 1.0
     for attempt in range(max_retries):
         try:
-            model = genai.GenerativeModel(model_name="gemini-1.5-flash")
+            model = genai.GenerativeModel(model_name="gemini-1.5-flash-latest")
             response = model.generate_content(prompt)
             text = ""
             if hasattr(response, "text") and response.text:
