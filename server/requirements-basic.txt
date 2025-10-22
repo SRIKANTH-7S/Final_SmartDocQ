@@ -6,7 +6,3 @@ python-multipart
 pydantic
 bcrypt
 PyJWT
-google-generativeai
-PyMuPDF
-python-docx
-numpy
