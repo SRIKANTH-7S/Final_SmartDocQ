@@ -24,16 +24,26 @@ try {
   console.log('🔨 Building server...');
   execSync('npm run build:server', { cwd: path.join(__dirname, 'server'), stdio: 'inherit' });
   
-  // Step 4: Copy client build to server dist
-  console.log('📋 Copying client build to server dist...');
-  const clientDistPath = path.join(__dirname, 'client', 'dist');
+  // Step 4: Verify client build is in the correct location
+  console.log('📋 Verifying client build location...');
   const serverDistPath = path.join(__dirname, 'server', 'dist', 'public');
   
-  if (fs.existsSync(serverDistPath)) {
-    fs.rmSync(serverDistPath, { recursive: true });
+  if (!fs.existsSync(serverDistPath)) {
+    console.error(`❌ Client build not found at: ${serverDistPath}`);
+    console.log('📁 Checking if client built to different location...');
+    
+    // Check if it built to the old location
+    const oldClientDistPath = path.join(__dirname, 'client', 'dist');
+    if (fs.existsSync(oldClientDistPath)) {
+      console.log('📋 Found client build in old location, copying...');
+      fs.cpSync(oldClientDistPath, serverDistPath, { recursive: true });
+      console.log('✅ Client build copied to correct location');
+    } else {
+      throw new Error(`Client build not found at expected locations`);
+    }
+  } else {
+    console.log('✅ Client build found at:', serverDistPath);
   }
-  
-  fs.cpSync(clientDistPath, serverDistPath, { recursive: true });
   
   console.log('✅ Build completed successfully!');
   console.log('📁 Client files copied to: server/dist/public');
