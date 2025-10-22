@@ -423,24 +423,20 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# Allow frontend origin(s) during development
-origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:5000",
-    "http://127.0.0.1:5000",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-]
+# CORS: allow configured origins (comma-separated) or *
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*")
+origins = (
+    [o.strip() for o in ALLOWED_ORIGINS.split(",") if o.strip()]
+    if ALLOWED_ORIGINS != "*"
+    else ["*"]
+)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
 

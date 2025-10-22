@@ -458,7 +458,7 @@ export default function InterviewCopilot({
   formData.append("question_type", questionType);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/interview/start", {
+      const response = await fetch(`${(import.meta as any).env?.VITE_API_BASE_URL || window.location.origin + "/api"}/interview/start`, {
         method: "POST",
         body: formData,
         headers: {
@@ -542,7 +542,7 @@ export default function InterviewCopilot({
     }
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/interview/${sessionId}/submit`, {
+      const response = await fetch(`${(import.meta as any).env?.VITE_API_BASE_URL || window.location.origin + "/api"}/interview/${sessionId}/submit`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

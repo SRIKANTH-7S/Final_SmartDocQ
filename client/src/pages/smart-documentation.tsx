@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { FileText, MessageSquare, User, Bot, Send, Upload, Plus, X, MoreVertical, LogOut } from "lucide-react";
 import FileUpload from "@/components/file-upload";
 import Navigation from "@/components/navigation";
+import { API_BASE } from "@/lib/api";
 
 interface Message {
   id: string;
@@ -41,7 +42,6 @@ export default function SmartDocumentation({
   userEmail, 
   onLogout 
 }: SmartDocumentationProps) {
-  const API_BASE = "http://127.0.0.1:8000/api";
   const [documents, setDocuments] = useState<Document[]>([]);
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string>("");
