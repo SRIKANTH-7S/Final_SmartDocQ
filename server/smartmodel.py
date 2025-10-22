@@ -168,7 +168,7 @@
 # # ================================
 # def ask_gemini_with_context(query, context_chunks=None):
 #     try:
-#         model_name = "gemini-1.5-flash"  
+#         model_name = "gemini-1.5-flash-latest"  
 #         gmodel = genai.GenerativeModel(model_name=model_name)
 
 #         if not context_chunks:
@@ -370,7 +370,7 @@ Answer:
     backoff = 1.0
     for attempt in range(max_retries):
         try:
-            model = genai.GenerativeModel(model_name="gemini-2.0-flash")
+            model = genai.GenerativeModel(model_name="gemini-1.5-flash-latest")
             response = model.generate_content(prompt)
             text = ""
             if hasattr(response, "text") and response.text:
