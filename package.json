@@ -1,0 +1,38 @@
+{
+  "name": "smartdocq",
+  "version": "1.0.0",
+  "description": "SmartDocumentationAI - AI-powered document analysis and interview system",
+  "main": "server/production-server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "build": "node build.js",
+    "start": "cd server && npm start",
+    "install:all": "npm install && cd client && npm install && cd ../server && npm install",
+    "clean": "rm -rf client/dist server/dist client/node_modules server/node_modules node_modules",
+    "deploy:render": "npm run build && npm start"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "your-repository-url"
+  },
+  "keywords": [
+    "ai",
+    "documentation",
+    "interview",
+    "react",
+    "nodejs",
+    "fastapi"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}

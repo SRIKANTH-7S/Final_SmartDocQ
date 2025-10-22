@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: smartdocq
+    env: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: HOST
+        value: 0.0.0.0
+      - key: MONGO_URI
+        fromDatabase:
+          name: smartdocq-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRY_MINUTES
+        value: "60"
+      - key: ALLOWED_ORIGINS
+        value: https://smartdocq.onrender.com
+      - key: GOOGLE_AI_API_KEY
+        sync: false
+
+databases:
+  - name: smartdocq-db
+    plan: free
+    databaseName: smartdocq
