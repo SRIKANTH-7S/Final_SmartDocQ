@@ -90,7 +90,7 @@ def build_faiss_index(chunks: List[str]) -> Tuple[faiss.IndexFlatL2, List[str]]:
 def gemini_generate(prompt: str) -> str:
     """Uses Google Gemini to generate a text response."""
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash-latest")
+        model = genai.GenerativeModel("gemini-1.5-flash")
         res = model.generate_content(prompt)
         # Log for debugging (avoid logging prompt with secrets)
         logging.debug("gemini_generate: received response object type: %s", type(res))
