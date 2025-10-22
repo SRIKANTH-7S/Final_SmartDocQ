@@ -491,10 +491,15 @@ export default function InterviewCopilot({
       setSessionId(data.session_id);
 
       // Display questions as bot messages
+      // Use structured questions for clean display if available, otherwise fall back to raw questions
+      const questionTexts = data.structured_questions && data.structured_questions.length > 0 
+        ? data.structured_questions.map((s: any, idx: number) => `${idx + 1}. ${s.question}`)
+        : data.questions.map((q: string, idx: number) => `${idx + 1}. ${q}`);
+      
       const botMessage: Message = {
         id: Date.now().toString(),
         type: "bot",
-        content: data.questions.map((q: string, idx: number) => `${idx + 1}. ${q}`).join("\n\n"),
+        content: questionTexts.join("\n\n"),
         timestamp: new Date(),
       };
       setMessages((prev) => {
@@ -757,7 +762,13 @@ export default function InterviewCopilot({
                 {/* Inline answer inputs */}
                 {questions.map((q, idx) => (
                   <div key={idx} className="mt-4">
-                    <p className="font-medium">{idx + 1}. {q}</p>
+                    {/* Display clean question text without inline options for MCQs */}
+                    {structuredQuestions && structuredQuestions[idx] && Array.isArray(structuredQuestions[idx].options) && structuredQuestions[idx].options.length > 0 ? (
+                      <p className="font-medium">{idx + 1}. {structuredQuestions[idx].question}</p>
+                    ) : (
+                      <p className="font-medium">{idx + 1}. {q}</p>
+                    )}
+                    
                     {/* If structured question has options (MCQ), render radio options */}
                     {structuredQuestions && structuredQuestions[idx] && Array.isArray(structuredQuestions[idx].options) && structuredQuestions[idx].options.length > 0 ? (
                       <div className="mt-2 space-y-2">
