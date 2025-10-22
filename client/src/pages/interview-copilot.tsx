@@ -293,6 +293,8 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { MessageSquare, User, Bot, Send, Upload, FileText, Settings } from "lucide-react";
 import FileUpload from "@/components/file-upload";
 import Navigation from "@/components/navigation";
@@ -761,35 +763,37 @@ export default function InterviewCopilot({
 
                 {/* Inline answer inputs */}
                 {questions.map((q, idx) => (
-                  <div key={idx} className="mt-4">
+                  <div key={idx} className="mt-6 p-4 bg-card-bg rounded-lg border border-border-color">
                     {/* Display clean question text without inline options for MCQs */}
                     {structuredQuestions && structuredQuestions[idx] && Array.isArray(structuredQuestions[idx].options) && structuredQuestions[idx].options.length > 0 ? (
-                      <p className="font-medium">{idx + 1}. {structuredQuestions[idx].question}</p>
+                      <p className="font-medium text-lg mb-4">{idx + 1}. {structuredQuestions[idx].question}</p>
                     ) : (
-                      <p className="font-medium">{idx + 1}. {q}</p>
+                      <p className="font-medium text-lg mb-4">{idx + 1}. {q}</p>
                     )}
                     
                     {/* If structured question has options (MCQ), render radio options */}
                     {structuredQuestions && structuredQuestions[idx] && Array.isArray(structuredQuestions[idx].options) && structuredQuestions[idx].options.length > 0 ? (
-                      <div className="mt-2 space-y-2">
-                        {structuredQuestions[idx].options.map((opt: string, oi: number) => (
-                          <label key={oi} className="flex items-center space-x-3">
-                            <input
-                              type="radio"
-                              name={`q-${idx}`}
-                              value={opt}
-                              checked={answers[idx] === opt}
-                              onChange={() => {
-                                updateAnswer(idx, opt);
-                                const updatedSessions = chatSessions.map(s => s.id === currentChatId ? { ...s, lastMessage: `Answered Q${idx + 1}`, timestamp: new Date() } : s);
-                                setChatSessions(updatedSessions);
-                                persistChatSessions(updatedSessions);
-                                saveSessionState(currentChatId);
-                              }}
-                            />
-                            <span className="text-sm">{opt}</span>
-                          </label>
-                        ))}
+                      <div className="mt-3">
+                        <RadioGroup
+                          value={answers[idx] || ""}
+                          onValueChange={(value) => {
+                            updateAnswer(idx, value);
+                            const updatedSessions = chatSessions.map(s => s.id === currentChatId ? { ...s, lastMessage: `Answered Q${idx + 1}`, timestamp: new Date() } : s);
+                            setChatSessions(updatedSessions);
+                            persistChatSessions(updatedSessions);
+                            saveSessionState(currentChatId);
+                          }}
+                          className="space-y-3"
+                        >
+                          {structuredQuestions[idx].options.map((opt: string, oi: number) => (
+                            <div key={oi} className="flex items-center space-x-3 p-3 rounded-md hover:bg-primary-bg/50 transition-colors">
+                              <RadioGroupItem value={opt} id={`q-${idx}-${oi}`} />
+                              <Label htmlFor={`q-${idx}-${oi}`} className="text-sm cursor-pointer flex-1 font-normal">
+                                {opt}
+                              </Label>
+                            </div>
+                          ))}
+                        </RadioGroup>
                       </div>
                     ) : (
                       <Input
