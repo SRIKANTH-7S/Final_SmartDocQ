@@ -141,7 +141,7 @@ export default function Upload() {
     formData.append("file", file);
 
     try {
-      const response = await fetch(`${(import.meta as any).env?.VITE_API_BASE_URL || window.location.origin + "/api"}/upload`, {
+      const response = await fetch(`${(import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:10000/api"}/upload`, {
         method: "POST",
         body: formData,
       });
