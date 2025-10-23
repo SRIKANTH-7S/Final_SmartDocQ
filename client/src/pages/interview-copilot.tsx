@@ -828,7 +828,7 @@ export default function InterviewCopilot({
                 {/* Inline answer inputs */}
                 {questions.map((q, idx) => {
                   // Check if this is an MCQ question - either has structured options or question type is MCQ
-                  const hasStructuredOptions = structuredQuestions && structuredQuestions[idx] && Array.isArray(structuredQuestions[idx].options) && structuredQuestions[idx].options.length === 4;
+                  const hasStructuredOptions = structuredQuestions && structuredQuestions[idx] && Array.isArray(structuredQuestions[idx].options) && structuredQuestions[idx].options.length > 0;
                   const isMCQType = questionType === 'mcq';
                   const isMCQ = hasStructuredOptions || (isMCQType && structuredQuestions && structuredQuestions[idx]);
                   
@@ -858,17 +858,17 @@ export default function InterviewCopilot({
                             className="space-y-2"
                           >
                             {(() => {
-                              // Get options from structured question - ensure we have exactly 4 options
+                              // Get options from structured question
                               let options = structuredQuestions[idx]?.options || [];
                               
-                              // If we don't have 4 options, create default ones
-                              if (options.length !== 4) {
+                              // If we don't have options, create default ones
+                              if (options.length === 0) {
                                 options = ['A) Option A', 'B) Option B', 'C) Option C', 'D) Option D'];
                               }
                               
                               return options.map((opt: string, oi: number) => {
-                                const optionLetter = String.fromCharCode(65 + oi); // A, B, C, D
-                                const cleanOption = opt.replace(/^[A-D]\)\s*/, ''); // Remove A), B), etc. prefix
+                                const optionLetter = String.fromCharCode(65 + oi); // A, B, C, D, etc.
+                                const cleanOption = opt.replace(/^[A-Z]\)\s*/, ''); // Remove A), B), etc. prefix
                                 const isSelected = answers[idx] === opt;
                                 const isCorrect = structuredQuestions[idx]?.correct === opt;
                                 const showResults = feedback !== null;
