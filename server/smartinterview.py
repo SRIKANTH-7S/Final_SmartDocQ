@@ -159,7 +159,8 @@ class InterviewCopilot:
             if qtype_lower == "mcq":
                 instr = (
                     "Return a JSON array with exactly {n} MCQ objects based ONLY on the Document Context. "
-                    "Each object must have: question (string), options (array of 4 option strings labeled 'A) ...', 'B) ...'), and correct (the correct option label and text, e.g. 'B) Option text'). "
+                    "Each object must have: question (string - clean question text without options), options (array of exactly 4 option strings with labels 'A) ...', 'B) ...', 'C) ...', 'D) ...'), and correct (the correct option label and text, e.g. 'B) Option text'). "
+                    "Format: question should be a clear question ending with '?', options should be exactly 4 choices with A), B), C), D) labels, correct should match one of the option labels exactly."
                 )
             elif qtype_lower == "hr":
                 instr = (

@@ -932,10 +932,12 @@ def submit_answers(session_id: str, payload: SubmitAnswersRequest):
             total = 0
             for idx, (q, ans) in enumerate(zip(structured, answers)):
                 correct = str(q.get("correct", "")).strip()
-                # Compare normalized strings
+                # Compare normalized strings - only give points for exact matches
                 user_sel = str(ans or "").strip()
-                score = 10 if user_sel and (user_sel == correct or user_sel.startswith(correct.split(")")[0])) else 0
-                fb_text = "Correct." if score == 10 else f"Incorrect. Correct: {correct}"
+                # Check for exact match or if user selected the correct option letter
+                is_correct = (user_sel == correct) or (user_sel.startswith(correct.split(")")[0] + ")"))
+                score = 10 if is_correct else 0
+                fb_text = "Correct!" if score == 10 else f"Incorrect. The correct answer is: {correct}"
                 feedback.append({
                     "question": q.get("question", ""),
                     "user_answer": user_sel,
