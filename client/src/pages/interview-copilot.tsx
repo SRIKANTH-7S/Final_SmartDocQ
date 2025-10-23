@@ -570,9 +570,9 @@ export default function InterviewCopilot({
     let total = 0;
     
     structuredQuestions.forEach((question: any, index: number) => {
-      if (question.options && question.correct && answers[index]) {
+      if (question.options && question.correct) {
         total++;
-        const userAnswer = answers[index].trim();
+        const userAnswer = answers[index]?.trim() || '';
         const correctAnswer = question.correct.trim();
         
         // Check if user selected the correct option
@@ -636,9 +636,10 @@ export default function InterviewCopilot({
       const { correct, total } = calculateCurrentScore();
       const backendCorrectCount = data.correct_count ?? correct;
       const backendTotalCount = data.total_questions ?? total;
+      const answeredQuestions = answers.filter(a => a && a.trim() !== '').length;
       const scoreMessage = backendTotalCount > 0 
-        ? `✅ Interview Completed!\n\n📊 Your Results:\n• Average Score: ${data.avg_score}/10\n• MCQ Score: You scored ${backendCorrectCount}/${backendTotalCount} (${Math.round((backendCorrectCount/backendTotalCount) * 100)}%)\n\n🎯 ${backendCorrectCount === backendTotalCount ? 'Perfect! You got all MCQ questions right!' : `You answered ${backendCorrectCount} out of ${backendTotalCount} MCQ questions correctly.`}`
-        : `✅ Interview Completed!\nAverage Score: ${data.avg_score}/10`;
+        ? `✅ Interview Completed!\n\n📊 Your Results:\n• Average Score: ${data.avg_score}/10\n• MCQ Score: You scored ${backendCorrectCount}/${backendTotalCount} (${Math.round((backendCorrectCount/backendTotalCount) * 100)}%)\n• Questions Answered: ${answeredQuestions}/${questions.length}\n\n🎯 ${backendCorrectCount === backendTotalCount ? 'Perfect! You got all MCQ questions right!' : `You answered ${backendCorrectCount} out of ${backendTotalCount} MCQ questions correctly.`}`
+        : `✅ Interview Completed!\nAverage Score: ${data.avg_score}/10\nQuestions Answered: ${answeredQuestions}/${questions.length}`;
 
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -826,7 +827,9 @@ export default function InterviewCopilot({
                     Question Type: {questionType}<br/>
                     Has Structured Questions: {structuredQuestions ? 'Yes' : 'No'}<br/>
                     Structured Questions Count: {structuredQuestions?.length || 0}<br/>
-                    First Question Structure: {structuredQuestions?.[0] ? JSON.stringify(structuredQuestions[0], null, 2) : 'None'}
+                    First Question Structure: {structuredQuestions?.[0] ? JSON.stringify(structuredQuestions[0], null, 2) : 'None'}<br/>
+                    Answers: {JSON.stringify(answers)}<br/>
+                    Current Score: {JSON.stringify(calculateCurrentScore())}
                   </div>
                 )}
 
@@ -1025,9 +1028,12 @@ export default function InterviewCopilot({
                     const backendCorrectCount = feedback && feedback.length > 0 ? 
                       feedback.filter(f => f.score >= 8).length : correct;
                     const backendTotalCount = feedback ? feedback.length : total;
+                    const answeredQuestions = answers.filter(a => a && a.trim() !== '').length;
                     return backendTotalCount > 0 && (
                       <div className="text-sm text-blue-600 mt-1 font-semibold">
                         MCQ: You scored {backendCorrectCount}/{backendTotalCount} correct
+                        <br />
+                        Questions Answered: {answeredQuestions}/{questions.length}
                       </div>
                     );
                   })()}
