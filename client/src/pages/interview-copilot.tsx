@@ -552,6 +552,33 @@ export default function InterviewCopilot({
     const updated = [...answers];
     updated[index] = value;
     setAnswers(updated);
+    
+    // Auto-save progress
+    saveSessionState(currentChatId);
+  };
+
+  // Calculate current score for MCQ questions
+  const calculateCurrentScore = () => {
+    if (!structuredQuestions || !answers) return { correct: 0, total: 0, score: 0 };
+    
+    let correct = 0;
+    let total = 0;
+    
+    structuredQuestions.forEach((question: any, index: number) => {
+      if (question.options && question.correct && answers[index]) {
+        total++;
+        const userAnswer = answers[index].trim();
+        const correctAnswer = question.correct.trim();
+        
+        // Check if user selected the correct option
+        if (userAnswer === correctAnswer) {
+          correct++;
+        }
+      }
+    });
+    
+    const score = total > 0 ? Math.round((correct / total) * 100) : 0;
+    return { correct, total, score };
   };
 
   // Submit all answers
@@ -598,10 +625,16 @@ export default function InterviewCopilot({
       setFeedback(reviewPayload.feedback);
       setAvgScore(reviewPayload.avg_score);
 
+      // Create completion message with detailed score
+      const { correct, total } = calculateCurrentScore();
+      const scoreMessage = total > 0 
+        ? `✅ Interview Completed!\n\n📊 Your Results:\n• Average Score: ${data.avg_score}/10\n• MCQ Score: ${correct}/${total} correct (${Math.round((correct/total) * 100)}%)\n\n🎯 ${correct === total ? 'Perfect! You got all MCQ questions right!' : `You answered ${correct} out of ${total} MCQ questions correctly.`}`
+        : `✅ Interview Completed!\nAverage Score: ${data.avg_score}/10`;
+
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: "bot",
-          content: `✅ Interview Completed!\nAverage Score: ${data.avg_score}`,
+        content: scoreMessage,
         timestamp: new Date(),
       };
       setMessages((prev) => {
@@ -800,27 +833,50 @@ export default function InterviewCopilot({
                             const updatedSessions = chatSessions.map(s => s.id === currentChatId ? { ...s, lastMessage: `Answered Q${idx + 1}`, timestamp: new Date() } : s);
                             setChatSessions(updatedSessions);
                             persistChatSessions(updatedSessions);
-                            saveSessionState(currentChatId);
                           }}
                           className="space-y-2"
                         >
                           {structuredQuestions[idx].options.map((opt: string, oi: number) => {
                             const optionLetter = String.fromCharCode(65 + oi); // A, B, C, D
                             const cleanOption = opt.replace(/^[A-D]\)\s*/, ''); // Remove A), B), etc. prefix
+                            const isSelected = answers[idx] === opt;
+                            const isCorrect = structuredQuestions[idx].correct === opt;
+                            const showResults = feedback !== null;
+                            
                             return (
-                              <div key={oi} className="flex items-center space-x-3 p-3 rounded-md hover:bg-primary-bg/50 transition-colors border border-border-color/30">
-                                <RadioGroupItem value={opt} id={`q-${idx}-${oi}`} />
+                              <div key={oi} className={`flex items-center space-x-3 p-3 rounded-md transition-colors border ${
+                                showResults 
+                                  ? isCorrect 
+                                    ? 'bg-green-50 border-green-300' 
+                                    : isSelected && !isCorrect
+                                    ? 'bg-red-50 border-red-300'
+                                    : 'bg-gray-50 border-gray-200'
+                                  : isSelected
+                                  ? 'bg-primary-blue/10 border-primary-blue/30'
+                                  : 'hover:bg-primary-bg/50 border-border-color/30'
+                              }`}>
+                                <RadioGroupItem 
+                                  value={opt} 
+                                  id={`q-${idx}-${oi}`}
+                                  disabled={showResults}
+                                />
                                 <Label htmlFor={`q-${idx}-${oi}`} className="text-sm cursor-pointer flex-1 font-normal">
                                   <span className="font-medium text-primary-blue mr-2">{optionLetter}</span>
                                   {cleanOption}
+                                  {showResults && isCorrect && (
+                                    <span className="ml-2 text-green-600 font-bold">✓ Correct</span>
+                                  )}
+                                  {showResults && isSelected && !isCorrect && (
+                                    <span className="ml-2 text-red-600 font-bold">✗ Wrong</span>
+                                  )}
                                 </Label>
                               </div>
                             );
                           })}
                         </RadioGroup>
-                        {answers[idx] && (
+                        {answers[idx] && !feedback && (
                           <div className="mt-2 text-sm text-green-600">
-                            ✓ Selected: {answers[idx]}
+                            ✓ Selected: {answers[idx].replace(/^[A-D]\)\s*/, '')}
                           </div>
                         )}
                       </div>
@@ -856,6 +912,31 @@ export default function InterviewCopilot({
                         {Math.round((answers.filter(a => a && a.trim() !== '').length / questions.length) * 100)}% Complete
                       </div>
                     </div>
+                    
+                    {/* Real-time MCQ Score Display */}
+                    {structuredQuestions && structuredQuestions.some((q: any) => q.options && q.correct) && (
+                      <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-blue-800">Current MCQ Score:</span>
+                          <span className="text-lg font-bold text-blue-600">
+                            {(() => {
+                              const { correct, total, score } = calculateCurrentScore();
+                              return total > 0 ? `${correct}/${total} (${score}%)` : '0/0 (0%)';
+                            })()}
+                          </span>
+                        </div>
+                        {(() => {
+                          const { correct, total } = calculateCurrentScore();
+                          return total > 0 && (
+                            <div className="mt-2 text-xs text-blue-600">
+                              {correct === total ? '🎉 Perfect! All answered correctly!' : 
+                               correct > 0 ? `Keep going! ${total - correct} more to get right.` : 
+                               'Select your answers to see your score.'}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
                     
                     <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
                       <div 
@@ -897,6 +978,14 @@ export default function InterviewCopilot({
                 <div className="text-right">
                   <div className="text-2xl font-bold text-primary-blue">{avgScore}/10</div>
                   <div className="text-sm text-text-secondary">Average Score</div>
+                  {(() => {
+                    const { correct, total } = calculateCurrentScore();
+                    return total > 0 && (
+                      <div className="text-sm text-blue-600 mt-1">
+                        MCQ: {correct}/{total} correct
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
               
