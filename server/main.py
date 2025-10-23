@@ -887,7 +887,7 @@ async def start_interview(
         "num_questions": num_questions,
         "level": level,
         "questions": questions,
-        "structured_questions": interview_bot.structured_questions,  # ✅ Fix: Get structured_questions directly from the bot
+        "structured_questions": getattr(interview_bot, "structured_questions", None),
         "interview_bot": interview_bot,  # store for later evaluation
         "answers": None,
         "feedback": None,
@@ -931,41 +931,28 @@ def submit_answers(session_id: str, payload: SubmitAnswersRequest):
             feedback = []
             total = 0
             correct_count = 0
-            answered_count = 0  # ✅ Track only answered questions
-            
             for idx, (q, ans) in enumerate(zip(structured, answers)):
                 correct = str(q.get("correct", "")).strip()
+                # Compare normalized strings - only give points for exact matches
                 user_sel = str(ans or "").strip()
-                
-                # ✅ Only evaluate if user actually answered (not empty)
-                if user_sel and user_sel.strip():
-                    answered_count += 1
-                    # Check for exact match or if user selected the correct option letter
-                    is_correct = (user_sel == correct) or (user_sel.startswith(correct.split(")")[0] + ")"))
-                    score = 10 if is_correct else 0
-                    if is_correct:
-                        correct_count += 1
-                    total += score
-                    fb_text = "Correct!" if score == 10 else f"Incorrect. The correct answer is: {correct}"
-                else:
-                    # ✅ Unanswered question gets 0 score
-                    score = 0
-                    fb_text = "No answer provided."
-                
+                # Check for exact match or if user selected the correct option letter
+                is_correct = (user_sel == correct) or (user_sel.startswith(correct.split(")")[0] + ")"))
+                score = 10 if is_correct else 0
+                if is_correct:
+                    correct_count += 1
+                fb_text = "Correct!" if score == 10 else f"Incorrect. The correct answer is: {correct}"
                 feedback.append({
                     "question": q.get("question", ""),
-                    "user_answer": user_sel if user_sel else "No answer provided",
+                    "user_answer": user_sel,
                     "score": score,
                     "feedback": fb_text,
                     "correct_answer": correct,
                 })
-            
-            # ✅ Calculate average based on answered questions only, not total questions
-            avg_score = round(total / answered_count, 2) if answered_count > 0 else 0
+                total += score
+            avg_score = round(total / len(structured), 2) if structured else 0
             # Store correct count for frontend display
             session["correct_count"] = correct_count
-            session["total_questions"] = answered_count  # ✅ Only count answered questions
-            session["total_available"] = len(structured)  # ✅ Store total available for reference
+            session["total_questions"] = len(structured)
         else:
             avg_score, feedback = interview_bot.evaluate_answers(answers)
     except Exception as e:
@@ -992,8 +979,7 @@ def submit_answers(session_id: str, payload: SubmitAnswersRequest):
         "avg_score": avg_score, 
         "feedback": feedback,
         "correct_count": session.get("correct_count", 0),
-        "total_questions": session.get("total_questions", len(answers)),
-        "total_available": session.get("total_available", len(answers))  # ✅ Include total available questions
+        "total_questions": session.get("total_questions", len(answers))
     }
 
 @app.get("/api/interview/{session_id}/review")

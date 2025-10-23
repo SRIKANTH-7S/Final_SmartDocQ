@@ -465,7 +465,7 @@ export default function InterviewCopilot({
   formData.append("question_type", questionType);
 
     try {
-      const response = await fetch(`${(import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:10000/api"}/interview/start`, {
+      const response = await fetch(`${(import.meta as any).env?.VITE_API_BASE_URL || window.location.origin + "/api"}/interview/start`, {
         method: "POST",
         body: formData,
         headers: {
@@ -597,7 +597,7 @@ export default function InterviewCopilot({
     }
 
     try {
-      const response = await fetch(`${(import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:10000/api"}/interview/${sessionId}/submit`, {
+      const response = await fetch(`${(import.meta as any).env?.VITE_API_BASE_URL || window.location.origin + "/api"}/interview/${sessionId}/submit`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -613,14 +613,13 @@ export default function InterviewCopilot({
 
       const data = await response.json();
 
-      // The POST /submit returns { session_id, avg_score, feedback, correct_count, total_questions, total_available }
+      // The POST /submit returns { session_id, avg_score, feedback, correct_count, total_questions }
       const reviewPayload = {
         session_id: data.session_id,
         avg_score: data.avg_score ?? null,
         feedback: Array.isArray(data.feedback) ? data.feedback : [],
         correct_count: data.correct_count ?? 0,
         total_questions: data.total_questions ?? answers.length,
-        total_available: data.total_available ?? answers.length,  // ✅ Include total available questions
       };
 
       // Save to sessionStorage so the review page can render it after navigation
@@ -636,11 +635,10 @@ export default function InterviewCopilot({
       // Create completion message with detailed score
       const { correct, total } = calculateCurrentScore();
       const backendCorrectCount = data.correct_count ?? correct;
-      const backendAnsweredCount = data.total_questions ?? total;  // ✅ This is now answered questions only
-      const backendTotalAvailable = data.total_available ?? answers.length;  // ✅ Total available questions
-      const scoreMessage = backendAnsweredCount > 0 
-        ? `✅ Interview Completed!\n\n📊 Your Results:\n• Average Score: ${data.avg_score}/10\n• MCQ Score: You scored ${backendCorrectCount}/${backendAnsweredCount} answered (${Math.round((backendCorrectCount/backendAnsweredCount) * 100)}%)\n• Questions Answered: ${backendAnsweredCount}/${backendTotalAvailable}\n\n🎯 ${backendCorrectCount === backendAnsweredCount ? 'Perfect! You got all answered questions right!' : `You answered ${backendCorrectCount} out of ${backendAnsweredCount} answered questions correctly.`}`
-        : `✅ Interview Completed!\nAverage Score: ${data.avg_score}/10\n• Questions Answered: 0/${backendTotalAvailable}`;
+      const backendTotalCount = data.total_questions ?? total;
+      const scoreMessage = backendTotalCount > 0 
+        ? `✅ Interview Completed!\n\n📊 Your Results:\n• Average Score: ${data.avg_score}/10\n• MCQ Score: You scored ${backendCorrectCount}/${backendTotalCount} (${Math.round((backendCorrectCount/backendTotalCount) * 100)}%)\n\n🎯 ${backendCorrectCount === backendTotalCount ? 'Perfect! You got all MCQ questions right!' : `You answered ${backendCorrectCount} out of ${backendTotalCount} MCQ questions correctly.`}`
+        : `✅ Interview Completed!\nAverage Score: ${data.avg_score}/10`;
 
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -1029,7 +1027,7 @@ export default function InterviewCopilot({
                     const backendTotalCount = feedback ? feedback.length : total;
                     return backendTotalCount > 0 && (
                       <div className="text-sm text-blue-600 mt-1 font-semibold">
-                        MCQ: You scored {backendCorrectCount}/{backendTotalCount} answered correctly
+                        MCQ: You scored {backendCorrectCount}/{backendTotalCount} correct
                       </div>
                     );
                   })()}

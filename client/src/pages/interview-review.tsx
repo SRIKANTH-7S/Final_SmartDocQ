@@ -6,9 +6,6 @@ export default function InterviewReview() {
     session_id?: string;
     avg_score?: number | null;
     feedback?: Array<{ question: string; user_answer: string; score: number; feedback: string; correct_answer?: string }>;
-    correct_count?: number;
-    total_questions?: number;
-    total_available?: number;
   }>(null);
 
   useEffect(() => {
@@ -43,16 +40,6 @@ export default function InterviewReview() {
         </div>
         <div className="mb-6">
           <strong>Average Score:</strong> {review.avg_score ?? "-"}
-          {review.correct_count !== undefined && review.total_questions !== undefined && (
-            <div className="mt-2">
-              <strong>MCQ Score:</strong> {review.correct_count}/{review.total_questions} answered correctly
-              {review.total_available !== undefined && review.total_available !== review.total_questions && (
-                <span className="text-sm text-text-secondary ml-2">
-                  (out of {review.total_available} total questions)
-                </span>
-              )}
-            </div>
-          )}
         </div>
 
         <div className="space-y-4">
