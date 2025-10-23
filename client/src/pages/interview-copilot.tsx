@@ -628,7 +628,7 @@ export default function InterviewCopilot({
       // Create completion message with detailed score
       const { correct, total } = calculateCurrentScore();
       const scoreMessage = total > 0 
-        ? `✅ Interview Completed!\n\n📊 Your Results:\n• Average Score: ${data.avg_score}/10\n• MCQ Score: ${correct}/${total} correct (${Math.round((correct/total) * 100)}%)\n\n🎯 ${correct === total ? 'Perfect! You got all MCQ questions right!' : `You answered ${correct} out of ${total} MCQ questions correctly.`}`
+        ? `✅ Interview Completed!\n\n📊 Your Results:\n• Average Score: ${data.avg_score}/10\n• MCQ Score: You scored ${correct}/${total} (${Math.round((correct/total) * 100)}%)\n\n🎯 ${correct === total ? 'Perfect! You got all MCQ questions right!' : `You answered ${correct} out of ${total} MCQ questions correctly.`}`
         : `✅ Interview Completed!\nAverage Score: ${data.avg_score}/10`;
 
       const botMessage: Message = {
@@ -844,12 +844,12 @@ export default function InterviewCopilot({
                             const showResults = feedback !== null;
                             
                             return (
-                              <div key={oi} className={`flex items-center space-x-3 p-3 rounded-md transition-colors border ${
+                              <div key={oi} className={`flex items-center space-x-3 p-3 rounded-md transition-colors border-2 ${
                                 showResults 
                                   ? isCorrect 
-                                    ? 'bg-green-50 border-green-300' 
+                                    ? 'bg-green-100 border-green-400 shadow-sm' 
                                     : isSelected && !isCorrect
-                                    ? 'bg-red-50 border-red-300'
+                                    ? 'bg-red-100 border-red-400 shadow-sm'
                                     : 'bg-gray-50 border-gray-200'
                                   : isSelected
                                   ? 'bg-primary-blue/10 border-primary-blue/30'
@@ -864,10 +864,10 @@ export default function InterviewCopilot({
                                   <span className="font-medium text-primary-blue mr-2">{optionLetter}</span>
                                   {cleanOption}
                                   {showResults && isCorrect && (
-                                    <span className="ml-2 text-green-600 font-bold">✓ Correct</span>
+                                    <span className="ml-2 text-green-700 font-bold text-base">✓ Correct Answer</span>
                                   )}
                                   {showResults && isSelected && !isCorrect && (
-                                    <span className="ml-2 text-red-600 font-bold">✗ Wrong</span>
+                                    <span className="ml-2 text-red-700 font-bold text-base">✗ Your Answer (Incorrect)</span>
                                   )}
                                 </Label>
                               </div>
@@ -915,23 +915,28 @@ export default function InterviewCopilot({
                     
                     {/* Real-time MCQ Score Display */}
                     {structuredQuestions && structuredQuestions.some((q: any) => q.options && q.correct) && (
-                      <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-blue-800">Current MCQ Score:</span>
-                          <span className="text-lg font-bold text-blue-600">
+                      <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-2 border-blue-300 shadow-sm">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-base font-semibold text-blue-900">Current MCQ Score:</span>
+                          <span className="text-2xl font-bold text-blue-700">
                             {(() => {
                               const { correct, total, score } = calculateCurrentScore();
-                              return total > 0 ? `${correct}/${total} (${score}%)` : '0/0 (0%)';
+                              return total > 0 ? `You scored ${correct}/${total}` : '0/0';
                             })()}
                           </span>
                         </div>
                         {(() => {
-                          const { correct, total } = calculateCurrentScore();
+                          const { correct, total, score } = calculateCurrentScore();
                           return total > 0 && (
-                            <div className="mt-2 text-xs text-blue-600">
-                              {correct === total ? '🎉 Perfect! All answered correctly!' : 
-                               correct > 0 ? `Keep going! ${total - correct} more to get right.` : 
-                               'Select your answers to see your score.'}
+                            <div className="flex items-center justify-between">
+                              <div className="text-sm text-blue-700 font-medium">
+                                {correct === total ? '🎉 Perfect! All answered correctly!' : 
+                                 correct > 0 ? `Keep going! ${total - correct} more to get right.` : 
+                                 'Select your answers to see your score.'}
+                              </div>
+                              <div className="text-lg font-bold text-blue-600">
+                                {score}%
+                              </div>
                             </div>
                           );
                         })()}
@@ -981,8 +986,8 @@ export default function InterviewCopilot({
                   {(() => {
                     const { correct, total } = calculateCurrentScore();
                     return total > 0 && (
-                      <div className="text-sm text-blue-600 mt-1">
-                        MCQ: {correct}/{total} correct
+                      <div className="text-sm text-blue-600 mt-1 font-semibold">
+                        MCQ: You scored {correct}/{total} correct
                       </div>
                     );
                   })()}
