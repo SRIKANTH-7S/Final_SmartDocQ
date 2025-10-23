@@ -810,96 +810,118 @@ export default function InterviewCopilot({
                   </div>
                 ))}
 
-                {/* Inline answer inputs */}
-                {questions.map((q, idx) => (
-                  <div key={idx} className="mt-6 p-4 bg-card-bg rounded-lg border border-border-color">
-                    {/* Display clean question text without inline options for MCQs */}
-                    {structuredQuestions && structuredQuestions[idx] && Array.isArray(structuredQuestions[idx].options) && structuredQuestions[idx].options.length > 0 ? (
-                      <div className="mb-4">
-                        <p className="font-medium text-lg mb-2">{idx + 1}. {structuredQuestions[idx].question}</p>
-                        <p className="text-sm text-text-secondary">Choose the correct answer:</p>
-                      </div>
-                    ) : (
-                      <p className="font-medium text-lg mb-4">{idx + 1}. {q}</p>
-                    )}
-                    
-                    {/* If structured question has options (MCQ), render radio options */}
-                    {structuredQuestions && structuredQuestions[idx] && Array.isArray(structuredQuestions[idx].options) && structuredQuestions[idx].options.length > 0 ? (
-                      <div className="mt-3">
-                        <RadioGroup
-                          value={answers[idx] || ""}
-                          onValueChange={(value) => {
-                            updateAnswer(idx, value);
-                            const updatedSessions = chatSessions.map(s => s.id === currentChatId ? { ...s, lastMessage: `Answered Q${idx + 1}`, timestamp: new Date() } : s);
-                            setChatSessions(updatedSessions);
-                            persistChatSessions(updatedSessions);
-                          }}
-                          className="space-y-2"
-                        >
-                          {structuredQuestions[idx].options.map((opt: string, oi: number) => {
-                            const optionLetter = String.fromCharCode(65 + oi); // A, B, C, D
-                            const cleanOption = opt.replace(/^[A-D]\)\s*/, ''); // Remove A), B), etc. prefix
-                            const isSelected = answers[idx] === opt;
-                            const isCorrect = structuredQuestions[idx].correct === opt;
-                            const showResults = feedback !== null;
-                            
-                            return (
-                              <div key={oi} className={`flex items-center space-x-3 p-3 rounded-md transition-colors border-2 ${
-                                showResults 
-                                  ? isCorrect 
-                                    ? 'bg-green-100 border-green-400 shadow-sm' 
-                                    : isSelected && !isCorrect
-                                    ? 'bg-red-100 border-red-400 shadow-sm'
-                                    : 'bg-gray-50 border-gray-200'
-                                  : isSelected
-                                  ? 'bg-primary-blue/10 border-primary-blue/30'
-                                  : 'hover:bg-primary-bg/50 border-border-color/30'
-                              }`}>
-                                <RadioGroupItem 
-                                  value={opt} 
-                                  id={`q-${idx}-${oi}`}
-                                  disabled={showResults}
-                                />
-                                <Label htmlFor={`q-${idx}-${oi}`} className="text-sm cursor-pointer flex-1 font-normal">
-                                  <span className="font-medium text-primary-blue mr-2">{optionLetter}</span>
-                                  {cleanOption}
-                                  {showResults && isCorrect && (
-                                    <span className="ml-2 text-green-700 font-bold text-base">✓ Correct Answer</span>
-                                  )}
-                                  {showResults && isSelected && !isCorrect && (
-                                    <span className="ml-2 text-red-700 font-bold text-base">✗ Your Answer (Incorrect)</span>
-                                  )}
-                                </Label>
-                              </div>
-                            );
-                          })}
-                        </RadioGroup>
-                        {answers[idx] && !feedback && (
-                          <div className="mt-2 text-sm text-green-600">
-                            ✓ Selected: {answers[idx].replace(/^[A-D]\)\s*/, '')}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div>
-                        <Input
-                          value={answers[idx] || ""}
-                          onChange={(e) => {
-                            updateAnswer(idx, e.target.value);
-                            saveSessionState(currentChatId);
-                          }}
-                          placeholder="Type your answer here..."
-                          className="mt-1"
-                        />
-                        {answers[idx] && (
-                          <div className="mt-2 text-sm text-green-600">
-                            ✓ Answer saved
-                          </div>
-                        )}
-                      </div>
-                    )}
+                {/* Debug info - remove this after testing */}
+                {import.meta.env.DEV && (
+                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs">
+                    <strong>Debug Info:</strong><br/>
+                    Question Type: {questionType}<br/>
+                    Has Structured Questions: {structuredQuestions ? 'Yes' : 'No'}<br/>
+                    Structured Questions Count: {structuredQuestions?.length || 0}<br/>
+                    First Question Structure: {structuredQuestions?.[0] ? JSON.stringify(structuredQuestions[0], null, 2) : 'None'}
                   </div>
-                ))}
+                )}
+
+                {/* Inline answer inputs */}
+                {questions.map((q, idx) => {
+                  // Check if this is an MCQ question - either has structured options or question type is MCQ
+                  const hasStructuredOptions = structuredQuestions && structuredQuestions[idx] && Array.isArray(structuredQuestions[idx].options) && structuredQuestions[idx].options.length > 0;
+                  const isMCQType = questionType === 'mcq';
+                  const isMCQ = hasStructuredOptions || (isMCQType && structuredQuestions && structuredQuestions[idx]);
+                  
+                  return (
+                    <div key={idx} className="mt-6 p-4 bg-card-bg rounded-lg border border-border-color">
+                      {/* Display clean question text without inline options for MCQs */}
+                      {isMCQ ? (
+                        <div className="mb-4">
+                          <p className="font-medium text-lg mb-2">{idx + 1}. {structuredQuestions[idx].question}</p>
+                          <p className="text-sm text-text-secondary">Choose the correct answer:</p>
+                        </div>
+                      ) : (
+                        <p className="font-medium text-lg mb-4">{idx + 1}. {q}</p>
+                      )}
+                      
+                      {/* If structured question has options (MCQ), render radio options */}
+                      {isMCQ ? (
+                        <div className="mt-3">
+                          <RadioGroup
+                            value={answers[idx] || ""}
+                            onValueChange={(value) => {
+                              updateAnswer(idx, value);
+                              const updatedSessions = chatSessions.map(s => s.id === currentChatId ? { ...s, lastMessage: `Answered Q${idx + 1}`, timestamp: new Date() } : s);
+                              setChatSessions(updatedSessions);
+                              persistChatSessions(updatedSessions);
+                            }}
+                            className="space-y-2"
+                          >
+                            {(() => {
+                              // Get options from structured question or create default options for MCQ
+                              const options = structuredQuestions[idx]?.options || ['A) Option A', 'B) Option B', 'C) Option C', 'D) Option D'];
+                              return options.map((opt: string, oi: number) => {
+                                const optionLetter = String.fromCharCode(65 + oi); // A, B, C, D
+                                const cleanOption = opt.replace(/^[A-D]\)\s*/, ''); // Remove A), B), etc. prefix
+                                const isSelected = answers[idx] === opt;
+                                const isCorrect = structuredQuestions[idx]?.correct === opt;
+                                const showResults = feedback !== null;
+                                
+                                return (
+                                  <div key={oi} className={`flex items-center space-x-3 p-3 rounded-md transition-colors border-2 ${
+                                    showResults 
+                                      ? isCorrect 
+                                        ? 'bg-green-100 border-green-400 shadow-sm' 
+                                        : isSelected && !isCorrect
+                                        ? 'bg-red-100 border-red-400 shadow-sm'
+                                        : 'bg-gray-50 border-gray-200'
+                                      : isSelected
+                                      ? 'bg-primary-blue/10 border-primary-blue/30'
+                                      : 'hover:bg-primary-bg/50 border-border-color/30'
+                                  }`}>
+                                    <RadioGroupItem 
+                                      value={opt} 
+                                      id={`q-${idx}-${oi}`}
+                                      disabled={showResults}
+                                    />
+                                    <Label htmlFor={`q-${idx}-${oi}`} className="text-sm cursor-pointer flex-1 font-normal">
+                                      <span className="font-medium text-primary-blue mr-2">{optionLetter}</span>
+                                      {cleanOption}
+                                      {showResults && isCorrect && (
+                                        <span className="ml-2 text-green-700 font-bold text-base">✓ Correct Answer</span>
+                                      )}
+                                      {showResults && isSelected && !isCorrect && (
+                                        <span className="ml-2 text-red-700 font-bold text-base">✗ Your Answer (Incorrect)</span>
+                                      )}
+                                    </Label>
+                                  </div>
+                                );
+                              });
+                            })()}
+                          </RadioGroup>
+                          {answers[idx] && !feedback && (
+                            <div className="mt-2 text-sm text-green-600">
+                              ✓ Selected: {answers[idx].replace(/^[A-D]\)\s*/, '')}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          <Input
+                            value={answers[idx] || ""}
+                            onChange={(e) => {
+                              updateAnswer(idx, e.target.value);
+                              saveSessionState(currentChatId);
+                            }}
+                            placeholder="Type your answer here..."
+                            className="mt-1"
+                          />
+                          {answers[idx] && (
+                            <div className="mt-2 text-sm text-green-600">
+                              ✓ Answer saved
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
 
                 {/* Progress and Submit Section */}
                 {questions.length > 0 && !feedback && (
