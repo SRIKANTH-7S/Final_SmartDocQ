@@ -608,11 +608,13 @@ export default function InterviewCopilot({
 
       const data = await response.json();
 
-      // The POST /submit returns { session_id, avg_score, feedback }
+      // The POST /submit returns { session_id, avg_score, feedback, correct_count, total_questions }
       const reviewPayload = {
         session_id: data.session_id,
         avg_score: data.avg_score ?? null,
         feedback: Array.isArray(data.feedback) ? data.feedback : [],
+        correct_count: data.correct_count ?? 0,
+        total_questions: data.total_questions ?? answers.length,
       };
 
       // Save to sessionStorage so the review page can render it after navigation
@@ -627,8 +629,10 @@ export default function InterviewCopilot({
 
       // Create completion message with detailed score
       const { correct, total } = calculateCurrentScore();
-      const scoreMessage = total > 0 
-        ? `✅ Interview Completed!\n\n📊 Your Results:\n• Average Score: ${data.avg_score}/10\n• MCQ Score: You scored ${correct}/${total} (${Math.round((correct/total) * 100)}%)\n\n🎯 ${correct === total ? 'Perfect! You got all MCQ questions right!' : `You answered ${correct} out of ${total} MCQ questions correctly.`}`
+      const backendCorrectCount = data.correct_count ?? correct;
+      const backendTotalCount = data.total_questions ?? total;
+      const scoreMessage = backendTotalCount > 0 
+        ? `✅ Interview Completed!\n\n📊 Your Results:\n• Average Score: ${data.avg_score}/10\n• MCQ Score: You scored ${backendCorrectCount}/${backendTotalCount} (${Math.round((backendCorrectCount/backendTotalCount) * 100)}%)\n\n🎯 ${backendCorrectCount === backendTotalCount ? 'Perfect! You got all MCQ questions right!' : `You answered ${backendCorrectCount} out of ${backendTotalCount} MCQ questions correctly.`}`
         : `✅ Interview Completed!\nAverage Score: ${data.avg_score}/10`;
 
       const botMessage: Message = {
@@ -824,7 +828,7 @@ export default function InterviewCopilot({
                 {/* Inline answer inputs */}
                 {questions.map((q, idx) => {
                   // Check if this is an MCQ question - either has structured options or question type is MCQ
-                  const hasStructuredOptions = structuredQuestions && structuredQuestions[idx] && Array.isArray(structuredQuestions[idx].options) && structuredQuestions[idx].options.length > 0;
+                  const hasStructuredOptions = structuredQuestions && structuredQuestions[idx] && Array.isArray(structuredQuestions[idx].options) && structuredQuestions[idx].options.length === 4;
                   const isMCQType = questionType === 'mcq';
                   const isMCQ = hasStructuredOptions || (isMCQType && structuredQuestions && structuredQuestions[idx]);
                   
@@ -854,8 +858,14 @@ export default function InterviewCopilot({
                             className="space-y-2"
                           >
                             {(() => {
-                              // Get options from structured question or create default options for MCQ
-                              const options = structuredQuestions[idx]?.options || ['A) Option A', 'B) Option B', 'C) Option C', 'D) Option D'];
+                              // Get options from structured question - ensure we have exactly 4 options
+                              let options = structuredQuestions[idx]?.options || [];
+                              
+                              // If we don't have 4 options, create default ones
+                              if (options.length !== 4) {
+                                options = ['A) Option A', 'B) Option B', 'C) Option C', 'D) Option D'];
+                              }
+                              
                               return options.map((opt: string, oi: number) => {
                                 const optionLetter = String.fromCharCode(65 + oi); // A, B, C, D
                                 const cleanOption = opt.replace(/^[A-D]\)\s*/, ''); // Remove A), B), etc. prefix
@@ -1007,9 +1017,12 @@ export default function InterviewCopilot({
                   <div className="text-sm text-text-secondary">Average Score</div>
                   {(() => {
                     const { correct, total } = calculateCurrentScore();
-                    return total > 0 && (
+                    const backendCorrectCount = feedback && feedback.length > 0 ? 
+                      feedback.filter(f => f.score >= 8).length : correct;
+                    const backendTotalCount = feedback ? feedback.length : total;
+                    return backendTotalCount > 0 && (
                       <div className="text-sm text-blue-600 mt-1 font-semibold">
-                        MCQ: You scored {correct}/{total} correct
+                        MCQ: You scored {backendCorrectCount}/{backendTotalCount} correct
                       </div>
                     );
                   })()}

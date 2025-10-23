@@ -160,7 +160,8 @@ class InterviewCopilot:
                 instr = (
                     "Return a JSON array with exactly {n} MCQ objects based ONLY on the Document Context. "
                     "Each object must have: question (string - clean question text without options), options (array of exactly 4 option strings with labels 'A) ...', 'B) ...', 'C) ...', 'D) ...'), and correct (the correct option label and text, e.g. 'B) Option text'). "
-                    "Format: question should be a clear question ending with '?', options should be exactly 4 choices with A), B), C), D) labels, correct should match one of the option labels exactly."
+                    "Format: question should be a clear question ending with '?', options should be exactly 4 choices with A), B), C), D) labels, correct should match one of the option labels exactly. "
+                    "IMPORTANT: Generate questions that test understanding of the document content. Make sure each question has exactly 4 options and one correct answer."
                 )
             elif qtype_lower == "hr":
                 instr = (
@@ -206,11 +207,14 @@ Return ONLY valid JSON (no surrounding text). The JSON must be an array with exa
                             q = {
                                 "question": str(item.get("question", "")).strip(),
                                 "options": item.get("options") if isinstance(item.get("options"), list) else [],
-                                "correct": item.get("correct", "")
+                                "correct": str(item.get("correct", "")).strip()
                             }
-                            # Ensure labels for options
-                            if len(q["options"]) == 4:
-                                validated.append(q)
+                            # Ensure we have exactly 4 options and a valid correct answer
+                            if len(q["options"]) == 4 and q["correct"]:
+                                # Validate that correct answer matches one of the options
+                                correct_found = any(q["correct"] == opt for opt in q["options"])
+                                if correct_found:
+                                    validated.append(q)
                         if len(validated) >= num_questions:
                             self.structured_questions = validated[:num_questions]
                             self.questions = [s["question"] for s in self.structured_questions]

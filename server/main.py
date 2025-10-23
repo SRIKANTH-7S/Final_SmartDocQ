@@ -930,6 +930,7 @@ def submit_answers(session_id: str, payload: SubmitAnswersRequest):
             # Quick MCQ grading using structured 'correct' field
             feedback = []
             total = 0
+            correct_count = 0
             for idx, (q, ans) in enumerate(zip(structured, answers)):
                 correct = str(q.get("correct", "")).strip()
                 # Compare normalized strings - only give points for exact matches
@@ -937,6 +938,8 @@ def submit_answers(session_id: str, payload: SubmitAnswersRequest):
                 # Check for exact match or if user selected the correct option letter
                 is_correct = (user_sel == correct) or (user_sel.startswith(correct.split(")")[0] + ")"))
                 score = 10 if is_correct else 0
+                if is_correct:
+                    correct_count += 1
                 fb_text = "Correct!" if score == 10 else f"Incorrect. The correct answer is: {correct}"
                 feedback.append({
                     "question": q.get("question", ""),
@@ -947,6 +950,9 @@ def submit_answers(session_id: str, payload: SubmitAnswersRequest):
                 })
                 total += score
             avg_score = round(total / len(structured), 2) if structured else 0
+            # Store correct count for frontend display
+            session["correct_count"] = correct_count
+            session["total_questions"] = len(structured)
         else:
             avg_score, feedback = interview_bot.evaluate_answers(answers)
     except Exception as e:
@@ -968,7 +974,13 @@ def submit_answers(session_id: str, payload: SubmitAnswersRequest):
         pass
 
     # Return the feedback to the client (last review page)
-    return {"session_id": session_id, "avg_score": avg_score, "feedback": feedback}
+    return {
+        "session_id": session_id, 
+        "avg_score": avg_score, 
+        "feedback": feedback,
+        "correct_count": session.get("correct_count", 0),
+        "total_questions": session.get("total_questions", len(answers))
+    }
 
 @app.get("/api/interview/{session_id}/review")
 def interview_review(session_id: str):
