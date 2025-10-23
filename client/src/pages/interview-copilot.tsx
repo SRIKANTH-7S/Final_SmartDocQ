@@ -498,10 +498,12 @@ export default function InterviewCopilot({
       if (data.structured_questions && data.structured_questions.length > 0) {
         questionTexts = data.structured_questions.map((s: any, idx: number) => {
           if (s.options && Array.isArray(s.options) && s.options.length > 0) {
-            // MCQ format with options
-            const optionsText = s.options.map((opt: string, optIdx: number) => 
-              `   ${String.fromCharCode(65 + optIdx)}) ${opt.replace(/^[A-D]\)\s*/, '')}`
-            ).join('\n');
+            // MCQ format with options - match the Word document format
+            const optionsText = s.options.map((opt: string, optIdx: number) => {
+              const letter = String.fromCharCode(65 + optIdx); // A, B, C, D
+              const cleanOption = opt.replace(/^[A-D]\)\s*/, ''); // Remove existing A), B), etc.
+              return `${letter} ${cleanOption}`;
+            }).join('\n');
             return `${idx + 1}. ${s.question}\n${optionsText}`;
           } else {
             // Regular question
@@ -809,7 +811,7 @@ export default function InterviewCopilot({
                               <div key={oi} className="flex items-center space-x-3 p-3 rounded-md hover:bg-primary-bg/50 transition-colors border border-border-color/30">
                                 <RadioGroupItem value={opt} id={`q-${idx}-${oi}`} />
                                 <Label htmlFor={`q-${idx}-${oi}`} className="text-sm cursor-pointer flex-1 font-normal">
-                                  <span className="font-medium text-primary-blue mr-2">{optionLetter})</span>
+                                  <span className="font-medium text-primary-blue mr-2">{optionLetter}</span>
                                   {cleanOption}
                                 </Label>
                               </div>
