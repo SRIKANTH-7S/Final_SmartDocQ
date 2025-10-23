@@ -493,10 +493,24 @@ export default function InterviewCopilot({
       setSessionId(data.session_id);
 
       // Display questions as bot messages
-      // Use structured questions for clean display if available, otherwise fall back to raw questions
-      const questionTexts = data.structured_questions && data.structured_questions.length > 0 
-        ? data.structured_questions.map((s: any, idx: number) => `${idx + 1}. ${s.question}`)
-        : data.questions.map((q: string, idx: number) => `${idx + 1}. ${q}`);
+      // For MCQ questions, show the question with options in the chat
+      let questionTexts: string[] = [];
+      if (data.structured_questions && data.structured_questions.length > 0) {
+        questionTexts = data.structured_questions.map((s: any, idx: number) => {
+          if (s.options && Array.isArray(s.options) && s.options.length > 0) {
+            // MCQ format with options
+            const optionsText = s.options.map((opt: string, optIdx: number) => 
+              `   ${String.fromCharCode(65 + optIdx)}) ${opt.replace(/^[A-D]\)\s*/, '')}`
+            ).join('\n');
+            return `${idx + 1}. ${s.question}\n${optionsText}`;
+          } else {
+            // Regular question
+            return `${idx + 1}. ${s.question}`;
+          }
+        });
+      } else {
+        questionTexts = data.questions.map((q: string, idx: number) => `${idx + 1}. ${q}`);
+      }
       
       const botMessage: Message = {
         id: Date.now().toString(),
@@ -766,7 +780,10 @@ export default function InterviewCopilot({
                   <div key={idx} className="mt-6 p-4 bg-card-bg rounded-lg border border-border-color">
                     {/* Display clean question text without inline options for MCQs */}
                     {structuredQuestions && structuredQuestions[idx] && Array.isArray(structuredQuestions[idx].options) && structuredQuestions[idx].options.length > 0 ? (
-                      <p className="font-medium text-lg mb-4">{idx + 1}. {structuredQuestions[idx].question}</p>
+                      <div className="mb-4">
+                        <p className="font-medium text-lg mb-2">{idx + 1}. {structuredQuestions[idx].question}</p>
+                        <p className="text-sm text-text-secondary">Choose the correct answer:</p>
+                      </div>
                     ) : (
                       <p className="font-medium text-lg mb-4">{idx + 1}. {q}</p>
                     )}
@@ -783,42 +800,85 @@ export default function InterviewCopilot({
                             persistChatSessions(updatedSessions);
                             saveSessionState(currentChatId);
                           }}
-                          className="space-y-3"
+                          className="space-y-2"
                         >
-                          {structuredQuestions[idx].options.map((opt: string, oi: number) => (
-                            <div key={oi} className="flex items-center space-x-3 p-3 rounded-md hover:bg-primary-bg/50 transition-colors">
-                              <RadioGroupItem value={opt} id={`q-${idx}-${oi}`} />
-                              <Label htmlFor={`q-${idx}-${oi}`} className="text-sm cursor-pointer flex-1 font-normal">
-                                {opt}
-                              </Label>
-                            </div>
-                          ))}
+                          {structuredQuestions[idx].options.map((opt: string, oi: number) => {
+                            const optionLetter = String.fromCharCode(65 + oi); // A, B, C, D
+                            const cleanOption = opt.replace(/^[A-D]\)\s*/, ''); // Remove A), B), etc. prefix
+                            return (
+                              <div key={oi} className="flex items-center space-x-3 p-3 rounded-md hover:bg-primary-bg/50 transition-colors border border-border-color/30">
+                                <RadioGroupItem value={opt} id={`q-${idx}-${oi}`} />
+                                <Label htmlFor={`q-${idx}-${oi}`} className="text-sm cursor-pointer flex-1 font-normal">
+                                  <span className="font-medium text-primary-blue mr-2">{optionLetter})</span>
+                                  {cleanOption}
+                                </Label>
+                              </div>
+                            );
+                          })}
                         </RadioGroup>
+                        {answers[idx] && (
+                          <div className="mt-2 text-sm text-green-600">
+                            ✓ Selected: {answers[idx]}
+                          </div>
+                        )}
                       </div>
                     ) : (
-                      <Input
-                        value={answers[idx] || ""}
-                        onChange={(e) => {
-                          updateAnswer(idx, e.target.value);
-                          saveSessionState(currentChatId);
-                        }}
-                        placeholder="Type your answer here..."
-                        className="mt-1"
-                      />
+                      <div>
+                        <Input
+                          value={answers[idx] || ""}
+                          onChange={(e) => {
+                            updateAnswer(idx, e.target.value);
+                            saveSessionState(currentChatId);
+                          }}
+                          placeholder="Type your answer here..."
+                          className="mt-1"
+                        />
+                        {answers[idx] && (
+                          <div className="mt-2 text-sm text-green-600">
+                            ✓ Answer saved
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 ))}
 
-                {/* Submit all answers button placed at the end of questions */}
+                {/* Progress and Submit Section */}
                 {questions.length > 0 && !feedback && (
-                  <div className="mt-6">
+                  <div className="mt-6 p-4 bg-card-bg rounded-lg border border-border-color">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="text-sm font-medium">
+                        Progress: {answers.filter(a => a && a.trim() !== '').length} / {questions.length} answered
+                      </div>
+                      <div className="text-sm text-text-secondary">
+                        {Math.round((answers.filter(a => a && a.trim() !== '').length / questions.length) * 100)}% Complete
+                      </div>
+                    </div>
+                    
+                    <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+                      <div 
+                        className="bg-primary-blue h-2 rounded-full transition-all duration-300"
+                        style={{ 
+                          width: `${(answers.filter(a => a && a.trim() !== '').length / questions.length) * 100}%` 
+                        }}
+                      ></div>
+                    </div>
+                    
                     <Button
                       onClick={async () => {
+                        const answeredCount = answers.filter(a => a && a.trim() !== '').length;
+                        if (answeredCount < questions.length) {
+                          const unanswered = questions.length - answeredCount;
+                          if (!confirm(`You have ${unanswered} unanswered question(s). Do you want to submit anyway?`)) {
+                            return;
+                          }
+                        }
                         await submitAnswers();
                         // Navigate to review page
                         setLocation("/interview-review");
                       }}
                       className="w-full bg-green-600 hover:bg-green-700"
+                      disabled={answers.filter(a => a && a.trim() !== '').length === 0}
                     >
                       Submit All Answers & View Review
                     </Button>
@@ -830,20 +890,51 @@ export default function InterviewCopilot({
 
           {feedback && (
             <div className="p-4 border-t border-border-color bg-green-50">
-              <h3 className="font-medium mb-2">Interview Review</h3>
-              <p className="mb-2"><strong>Average Score:</strong> {avgScore}</p>
-              <div className="space-y-3">
-                {feedback.map((fb, i) => (
-                  <div key={i} className="p-3 bg-white rounded border border-border-color">
-                    <div className="text-sm font-medium">{i + 1}. {fb.question}</div>
-                    <div className="text-sm text-text-secondary mt-1"><strong>Your answer:</strong> {fb.user_answer}</div>
-                    {fb.correct_answer && (
-                      <div className="text-sm text-green-600 mt-1"><strong>Correct answer:</strong> {fb.correct_answer}</div>
-                    )}
-                    <div className="text-sm mt-1"><strong>Score:</strong> {fb.score}/10</div>
-                    <div className="text-sm mt-1 text-text-secondary"><strong>Feedback:</strong> {fb.feedback}</div>
-                  </div>
-                ))}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-medium text-lg">Interview Review</h3>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-primary-blue">{avgScore}/10</div>
+                  <div className="text-sm text-text-secondary">Average Score</div>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                {feedback.map((fb, i) => {
+                  const isCorrect = fb.score >= 8; // Consider 8+ as correct
+                  return (
+                    <div key={i} className={`p-4 rounded-lg border-2 ${
+                      isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                    }`}>
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="text-sm font-medium flex-1">{i + 1}. {fb.question}</div>
+                        <div className={`text-sm font-bold px-2 py-1 rounded ${
+                          isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {fb.score}/10
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div>
+                          <span className="font-medium text-text-secondary">Your answer:</span>
+                          <span className="ml-2">{fb.user_answer || 'No answer provided'}</span>
+                        </div>
+                        
+                        {fb.correct_answer && (
+                          <div>
+                            <span className="font-medium text-green-600">Correct answer:</span>
+                            <span className="ml-2">{fb.correct_answer}</span>
+                          </div>
+                        )}
+                        
+                        <div className="mt-2 p-2 bg-white rounded border">
+                          <span className="font-medium text-text-secondary">Feedback:</span>
+                          <span className="ml-2">{fb.feedback}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
