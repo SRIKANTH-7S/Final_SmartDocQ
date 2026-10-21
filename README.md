@@ -72,3 +72,8 @@ npm run dev
 ## License
 
 MIT
+
+
+
+
+Live: https://smartdoq.netlify.app
